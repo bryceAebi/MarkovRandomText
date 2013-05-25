@@ -1,5 +1,7 @@
 *.py[cod]
 
+result.txt
+
 # C extensions
 *.so
 
