@@ -1,4 +1,4 @@
-''' Markov Text Generator
+''' Markov Random Text Generator
 Created on May 24, 2013
 
 Provided 1 or more training documents, this 
@@ -15,29 +15,36 @@ times it occurs as a following word
 '''
 bigram_counts = {}
 
-def process_file(file_name, chunk_size):
+def process_file(file_name, markov_order):
     '''Stores the word occurrence data from a file in the global dictionary bigram_counts.
     
-    @param: file_name the path to the file to read
+    Arguments:
+    file_name    -- the path to the file to read
+    markov_order -- the markov order (ex: if markov_order = 2, each generated word is based on the two previous words)
     '''
     with open(file_name,'r') as text:
         line = text.readline()
         line_chunks = line.split()
 
         while (True):
-            while len(line_chunks) < chunk_size+1:
+            while len(line_chunks) < markov_order+1:
                 line = text.readline()
                 if not line:
                     return
                 line_chunks.extend(line.split())
-            prev_words = line_chunks[0:chunk_size]
-            assert len(prev_words) == chunk_size
-            update_bigram_counts(tuple(prev_words), line_chunks[chunk_size])
+            prev_words = line_chunks[0:markov_order]
+            assert len(prev_words) == markov_order
+            update_bigram_counts(tuple(prev_words), line_chunks[markov_order])
             line_chunks = line_chunks[1:]
 
 
 def update_bigram_counts(prev_words, word):
-    '''Record the occurrence of following_word after word in a global dictionary bigram_counts.'''
+    '''Record the occurrence of following_word after word in a global dictionary bigram_counts.
+    
+    Arguments:
+    prev_words -- the Markov-order length sequence of words preceding a word
+    word       -- the word preceded by prev_words
+    '''
     if bigram_counts.has_key(prev_words):
         word_count_map = bigram_counts[prev_words]
         count = word_count_map.get(word,0)
@@ -46,8 +53,13 @@ def update_bigram_counts(prev_words, word):
         bigram_counts[prev_words] = {word: 1}
 
 
-def calculate_probabilities(bigrams,probabilities):
-    '''For each word in the corpus, determines the probabilities of the next possible words. Stores results in probabilities.'''
+def calculate_probabilities(bigrams, probabilities):
+    '''For each word in the corpus, determines the probabilities of the next possible words. Stores results in probabilities.
+    
+    Arguments:
+    bigrams       --
+    probabilities --
+    '''
     for (prev_words, following_word_map) in bigrams.items():
         total_words = sum(following_word_map.values())
         probabilities[prev_words] = {}
@@ -56,7 +68,13 @@ def calculate_probabilities(bigrams,probabilities):
 
 
 def produce_text(output_file, output_size, probabilities):
-    '''Using the calculated word sequence probabilities, generates random text with output_size words and writes it to output_file.'''
+    '''Using the calculated word sequence probabilities, generates random text with output_size words and writes it to output_file.
+    
+    Arguments:
+    output_file   -- the path to the file to write the output to
+    output_size   -- the number of words to write to the output
+    probabilities -- a map of word tuples to maps of generated words to their probabilities
+    '''
     with open (output_file,'w') as output:
         rand_index = random.randint(0, len(probabilities.keys())-1)
         first_words = probabilities.keys()[rand_index]
@@ -78,6 +96,12 @@ def produce_text(output_file, output_size, probabilities):
 
 
 def choose_next_word(last_words, probabilities):
+    '''Given a tuple of words, randomly generate the next word.
+    
+    Arguments:
+    last_words    -- a tuple of words that precede the to-be-generated word
+    probabilities -- a map of word tuples to maps of generated words to their probabilities
+    '''
     next_word_map = probabilities[last_words]
     rand = random.random()
     prob_sum = 0.0
@@ -92,24 +116,27 @@ def choose_next_word(last_words, probabilities):
     return final_word
 
 
-def main():
-    if len(sys.argv) < 5:
+def main(args):
+    '''
+    
+    Arguments:
+    args --
+    '''
+    if len(args) < 4:
         print "Usage: <outputfile> <num_words> <num_words_per_chunk> <training_file> ..."
         return
 
-    output_file = sys.argv[1]      # the file to print the results to
-    output_size = int(sys.argv[2]) # the number of words to print to the output file
-    chunk_size = int(sys.argv[3])  # the size of each the word chunks that will make up the output
-    files = sys.argv[4:]           # the training files
+    output_file = args[0]      # the file to print the results to
+    output_size = int(args[1]) # the number of words to print to the output file
+    chunk_size = int(args[2])  # the size of each the word chunks that will make up the output
+    files = args[3:]           # the training files
 
+    # Error Handling
     if chunk_size < 1:
         print "Number of words per generated chunk must exceed 0"
         return
     if output_size < 0:
         print "The number of words to be generated must be a positive integer"
-        return
-    if chunk_size > output_size:
-        print "The number of words to be generated cannot be less than the number of words per generated chunk"
         return
     
     for file_name in files: # for each file passed in, store data from that file in global maps
@@ -124,6 +151,6 @@ def main():
     print "Output printed to", output_file
 
 
-if __name__ == '__main__': main()
+if __name__ == '__main__': main(sys.argv[1:])
 
 
