@@ -1,6 +1,6 @@
 *.py[cod]
 
-result.txt
+*.txt
 
 # C extensions
 *.so
